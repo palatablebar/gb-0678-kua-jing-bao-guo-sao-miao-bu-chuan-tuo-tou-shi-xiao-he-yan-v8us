@@ -18,8 +18,14 @@ def evaluate(rows,context):
     if rate<0:raise DomainError("BAD_RATE","赔付费率不能为负")
     good=[]
     for row in rows:
-        start=instant(row["accepted_at"]);end=instant(row["delivered_at"]) if row.get("delivered_at") else max(start,as_of)
-        hours=working_hours(start,end,row["zone"],set(p.get("holidays",{}).get(row["destination"],HOLIDAYS.get(row["destination"],set()))))
+        start=instant(row["accepted_at"]);state=row.get("delivery_state") or ("已妥投" if row.get("delivered_at") else "在途")
+        holidays=set(p.get("holidays",{}).get(row["destination"],HOLIDAYS.get(row["destination"],set())))
+        if state=="退回":
+            end=instant(row["returned_at"]) if row.get("returned_at") else max(start,as_of)
+            hours=working_hours(start,end,row["zone"],holidays)
+            good.append({**row,"working_hours":str(hours),"late_hours":"0","expected":money(0),"sla":"退回","clock_end":end.isoformat()});continue
+        end=instant(row["delivered_at"]) if row.get("delivered_at") else max(start,as_of)
+        hours=working_hours(start,end,row["zone"],holidays)
         late=max(Decimal(0),hours-number(row["promised_hours"]));comp=min(number(row["declared_value"])*Decimal("0.10"),late*rate)
         good.append({**row,"working_hours":str(hours),"late_hours":str(late),"expected":money(comp),"sla":"超时" if late>0 else "达标","clock_end":end.isoformat()})
-    return {"rows":good,"quarantine":[],"metrics":{"parcels":len(good),"late_parcels":sum(r["sla"]=="超时" for r in good),"compensation":money(sum((number(r["expected"]) for r in good),Decimal(0)))}}
+    return {"rows":good,"quarantine":[],"metrics":{"parcels":len(good),"late_parcels":sum(r["sla"]=="超时" for r in good),"returned_parcels":sum(r["sla"]=="退回" for r in good),"compensation":money(sum((number(r["expected"]) for r in good),Decimal(0)))}}

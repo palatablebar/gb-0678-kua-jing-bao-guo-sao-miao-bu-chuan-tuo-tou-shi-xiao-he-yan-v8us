@@ -1,6 +1,6 @@
 # 深度登记 跨境包裹扫描补传与妥投时效核验
 
-规模：中型。使用者：跨境集运客服质控员。核心规则：以事件发生时刻重建路径，补传不改变既有妥投时间；承诺时钟按目的地节假日停表。
+规模：中型。使用者：跨境集运客服质控员。核心规则：以事件发生时刻重建路径，补传不改变既有妥投时间；承诺时钟按目的地节假日停表；正式妥投以收件人实际取得为准，入柜/代收不停表，退回不计达标。
 
 ## 功能模块
 
@@ -32,6 +32,8 @@
 | TRAP-12 | DST自然日 | 固定24小时 | 按当地午夜切片 | `app/modules/m5_timeliness/rules.py` | `tests/test_m5.py::test_dst_actual_elapsed_hours` |
 | TRAP-13 | 迟到妥投补传 | 按上传时间赔付 | 发生时间重建 | `app/modules/m4_paths/rules.py` | `tests/test_m4.py::test_late_upload_event_time_decides` |
 | TRAP-23 | 假日端点 | 误算全天 | 当地日半开切段 | `app/modules/m5_timeliness/rules.py` | `tests/test_m5.py::test_holiday_full_day_stops` |
+| TRAP-27 | 入柜即停表 | 任一妥投记录结束计时 | 裁决以收件人实际取得为唯一正式妥投，入柜/代收仅记录 | `app/modules/m4_paths/rules.py` | `tests/test_m4.py::test_locker_does_not_stop_clock` |
+| TRAP-28 | 退回当达标 | 退回扫描结束计时 | 退回为终态未妥投，不计达标且原扫描保留 | `app/modules/m5_timeliness/rules.py` | `tests/test_m5.py::test_returned_never_on_time` |
 
 ## 对账规则
 
